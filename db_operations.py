@@ -37,6 +37,16 @@ def db_tables():
     return tables
 
 
+# Queries for data insertion
+insert_video_query = ("INSERT INTO `videos` "
+                      "(`id`, `title`, `url`, `duration_sec`, `captions`) "
+                      "VALUES (%s, %s, %s, %s, %s)")
+
+insert_statistics_query = ("INSERT INTO `statistics` "
+                           "(`video_id`, `date_time`, `view_count`, `like_count`, `dislike_count`) "
+                           "VALUES (%s, %s, %s, %s, %s)")
+
+
 def db_connect(username, pwd, host="127.0.0.1", port="3306"):
     """
     Creates a connection to the MySQL database.
@@ -92,10 +102,37 @@ def db_setup(cnx, dbname, tables):
             cursor.execute(table_description)
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-                print(table_name+" already exists.")
+                print(table_name + " already exists.")
             else:
                 print(err.msg)
         else:
-            print(table_name+" OK")
+            print(table_name + " OK")
 
+    cursor.close()
+
+
+def insert_data(cnx, query, data):
+    """
+    Inserts pandas DataFrame into the database row-by-row
+    Rows which produce errors are skipped
+    :param cnx: mysql connector object
+    :param query: appropriate INSERT query
+    :param data: pandas dataframe to be inserted
+    :return: None
+    """
+    # create an instance of 'cursor' class
+    cursor = cnx.cursor()
+
+    # Insert DataFrame records one by one.
+    for i, row in data.iterrows():
+        try:
+            cursor.execute(query, tuple(row))
+        except mysql.connector.Error as err:
+            print("There was an error during insertion of", row[0])
+            print(err.msg)
+            print("Row skipped")
+    print("Data Insertion Complete")
+
+    # Make sure data is committed to the database
+    cnx.commit()
     cursor.close()
