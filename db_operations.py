@@ -1,6 +1,7 @@
 import mysql.connector
 from mysql.connector import errorcode
 import getpass
+import pandas as pd
 
 
 def db_tables():
@@ -16,9 +17,9 @@ def db_tables():
         "CREATE TABLE `videos` ("
         "  `id` varchar(11) NOT NULL,"
         "  `title` varchar(100) NOT NULL,"
-        "  `url` varchar(35) NOT NULL,"
+        "  `url` varchar(45) NOT NULL,"
         "  `duration_sec` INT UNSIGNED NOT NULL,"
-        "  `captions` varchar(50) NOT NULL,"
+        "  `captions` varchar(100) NOT NULL,"
         "  PRIMARY KEY (`id`)"
         ") ENGINE=InnoDB")
 
@@ -38,13 +39,18 @@ def db_tables():
 
 
 # Queries for data insertion
-insert_video_query = ("INSERT INTO `videos` "
-                      "(`id`, `title`, `url`, `duration_sec`, `captions`) "
-                      "VALUES (%s, %s, %s, %s, %s)")
+insert_videos_query = ("INSERT INTO `videos` "
+                       "(`id`, `title`, `url`, `duration_sec`, `captions`) "
+                       "VALUES (%s, %s, %s, %s, %s)")
 
 insert_statistics_query = ("INSERT INTO `statistics` "
                            "(`video_id`, `date_time`, `view_count`, `like_count`, `dislike_count`) "
                            "VALUES (%s, %s, %s, %s, %s)")
+
+# Queries for data selection
+select_videos_query = "SELECT * FROM `videos`"
+
+select_statistics_query = "SELECT * FROM `statistics`"
 
 
 def db_connect(username, pwd, host="127.0.0.1", port="3306"):
@@ -136,3 +142,30 @@ def insert_data(cnx, query, data):
     # Make sure data is committed to the database
     cnx.commit()
     cursor.close()
+
+
+def fetch_data(cnx, table_name):
+    """
+    Performs a SELECT * query on the selected db table
+    and returns a pandas DataFrame of the result
+    :param cnx: mysql connector object
+    :param table_name: name of db table data will be selected from
+    :return: dataframe of table
+    """
+    # create an instance of 'cursor' class
+    cursor = cnx.cursor()
+
+    # execute query
+    if table_name == "videos":
+        cursor.execute(select_videos_query)
+    elif table_name == "statistics":
+        cursor.execute(select_statistics_query)
+    else:
+        raise Exception("Invalid table name")
+    table_rows = cursor.fetchall()
+
+    # create data frame with data
+    query_result = pd.DataFrame(table_rows, columns=cursor.column_names)
+
+    cursor.close()
+    return query_result
