@@ -13,16 +13,10 @@ from datetime import datetime
 import time
 
 
-
-api_key='AIzaSyBDijxihnqUFV-gvZf46z_3t_ZzwntUJjQ'
-youtube= build('youtube', 'v3',developerKey=api_key)
-sub_file_path='C:\\Users\\30694\\OneDrive\\Υπολογιστής\\subs\\' # insert file path for downloading subtitles
-
-def get_videos():
+def get_videos(api_key, sub_file_path):
+    youtube = build('youtube', 'v3', developerKey=api_key)
     
-    
-    
-    user_input=input("Which cartoon are we watching today?")
+    user_input = input("Which cartoon are we watching today?")
 
 # GET VIDEO IDS, TITLES, URLS ,
 
@@ -76,11 +70,11 @@ def get_videos():
         tempdf0=pd.json_normalize(response['items'])
         data_temp=tempdf0[fields_video]
         data_temp.columns=['v_id','v_title']
-        
-                
+
+
         # GET DURATION
         
-        
+
         video_ids=data_temp['v_id'].tolist()
         req2_ids=','.join(video_ids)
         request2 = youtube.videos().list(                              
@@ -130,11 +124,11 @@ def get_videos():
     data2.drop_duplicates(subset=['v_id'],inplace=True)
     print(str(len(data2))+' videos remaining after filtering.')
     # DOWNNLOAD SUBTITLES
-    
+
     print('Downloading subtitles.')
     no_sub=0
     paths=[]
-    
+
     for i in data2['v_id']:
     
         ytsource=YouTube('https://www.youtube.com/watch?v='+i)
@@ -151,10 +145,10 @@ def get_videos():
             indexNames=data2[data2['v_id']==i].index
             data2.drop(indexNames,inplace=True)
             no_sub+=1
-    
+
     print('Dropped '+str(no_sub)+' videos because no english subtitles were found.')
     data2['sub_path']=paths
-    
+
     data2.reset_index(drop=True,inplace=True)
     data2.columns=['id','title','duration_sec','url','captions']
     data2=data2[['id','title','url','duration_sec','captions']]
@@ -164,49 +158,41 @@ def get_videos():
     return(data2)
 
 
+def get_views_likes_dislikes(api_key, df_in1):
+    youtube = build('youtube', 'v3', developerKey=api_key)
+
+    timestamp=datetime.now()
+    chunk_size=50
+    list_df=[df_in1.id[i:i+chunk_size] for i in range(0,df_in1.shape[0],chunk_size)]
+    tempdf3=pd.DataFrame()
+    for i in list_df:
+
+        id_list=i.tolist()
+        request_ids=','.join(id_list)
+
+        request=youtube.videos().list(part='statistics',
+                                      id=request_ids).execute()
+
+        fields=['id','statistics.viewCount','statistics.likeCount','statistics.dislikeCount']
+        temp_df=pd.json_normalize(request['items'])
+        tempdf2=temp_df[fields]
+        tempdf2.columns=['video_id','view_count','like_count','dislike_count']
+        print(tempdf2)
+        tempdf3=tempdf3.append(tempdf2)
+        tempdf3.reset_index(drop=True,inplace=True)
+        tempdf3['date_time']=timestamp
+        tempdf3=tempdf3[['video_id','date_time','view_count','like_count','dislike_count']]
+    return tempdf3
 
 
-
-def get_views_likes_dislikes(df_in1):
-      
-      timestamp=datetime.now()
-      chunk_size=50
-      list_df=[df_in1.id[i:i+chunk_size] for i in range(0,df_in1.shape[0],chunk_size)]
-      tempdf3=pd.DataFrame()
-      for i in list_df:
-          
-          id_list=i.tolist()
-          request_ids=','.join(id_list)
-      
-          request=youtube.videos().list(part='statistics',
-                                    id=request_ids).execute()
-        
-          fields=['id','statistics.viewCount','statistics.likeCount','statistics.dislikeCount']
-          temp_df=pd.json_normalize(request['items'])
-          tempdf2=temp_df[fields]
-          tempdf2.columns=['video_id','view_count','like_count','dislike_count']
-          print(tempdf2)
-          tempdf3=tempdf3.append(tempdf2)
-          tempdf3.reset_index(drop=True,inplace=True)
-          tempdf3['date_time']=timestamp
-          tempdf3=tempdf3[['video_id','date_time','view_count','like_count','dislike_count']]
-      return(tempdf3)
-
-def get_statistics(df_in):
-    time_interval=input('Specify sample frequency in seconds ')
-    counter=0
-    while counter<48:
-        print('Getting statistics, .')
-        df_out=get_views_likes_dislikes(df_in)
-        #
-        #insert df_out into database!!!
-        #
-        #
-        print('Waiting '+time_interval+' seconds! '+ 'tik-tok..')
-        time.sleep(int(time_interval))
-        counter+=counter+1
-    print('Finished!')
-
-df1=get_videos()
-df2=get_statistics(df1)
+# for testing
+if __name__ == '__main__':
+    # API key
+    api_k = 'AIzaSyBDijxihnqUFV-gvZf46z_3t_ZzwntUJjQ'
+    # file path for downloading subtitles
+    file_path = 'C:\\Users\\30694\\OneDrive\\Υπολογιστής\\subs\\'
+    df1 = get_videos(api_k, file_path)
+    print(df1)
+    df2 = get_views_likes_dislikes(api_k, df1)
+    print(df2)
 
