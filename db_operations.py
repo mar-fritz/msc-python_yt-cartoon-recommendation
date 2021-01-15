@@ -53,7 +53,7 @@ select_videos_query = "SELECT * FROM `videos`"
 select_statistics_query = "SELECT * FROM `statistics`"
 
 
-def db_connect(username, pwd, host="127.0.0.1", port="3306"):
+def db_connect(username, pwd, host="127.0.0.1", port="3306", db=None):
     """
     Creates a connection to the MySQL database.
     Allows 3 attempts for entering credentials
@@ -61,14 +61,15 @@ def db_connect(username, pwd, host="127.0.0.1", port="3306"):
     :param pwd: password
     :param host: connection host
     :param port: connection port
+    :param db: database name
     :return: connector object
     """
     # connect to the MySQL database (3 attempts for pwd)
     for attempt in range(0, 3):
         try:
             cnx = mysql.connector.connect(user=username, password=pwd,
-                                          host=host, port=port
-                                          )
+                                          host=host, port=port,
+                                          database=db)
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 print('Something is wrong with your user name or password')
