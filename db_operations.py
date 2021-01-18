@@ -52,6 +52,15 @@ select_videos_query = "SELECT * FROM `videos`"
 
 select_statistics_query = "SELECT * FROM `statistics`"
 
+# Statistics Select
+select_latest_stats = ("SELECT * FROM `statistics`"
+                       "WHERE `date_time` = (SELECT MAX(`date_time`) FROM `statistics`)")
+
+select_earliest_stats = ("SELECT * FROM `statistics`"
+                         "WHERE `date_time` = (SELECT MIN(`date_time`) FROM `statistics`)")
+
+select_statistics_id = " WHERE `video_id` = %s"
+
 
 def db_connect(username, pwd, host="127.0.0.1", port="3306", db=None):
     """
@@ -145,12 +154,14 @@ def insert_data(cnx, query, data):
     cursor.close()
 
 
-def fetch_data(cnx, table_name):
+def fetch_data(cnx, table_name, date_time='all', id=None):
     """
     Performs a SELECT * query on the selected db table
     and returns a pandas DataFrame of the result
     :param cnx: mysql connector object
     :param table_name: name of db table data will be selected from
+    :param date_time: date of statistics to return default='all' Other options: 'latest', 'earliest'
+    :param id: video id of statistics to return
     :return: dataframe of table
     """
     # create an instance of 'cursor' class
@@ -160,7 +171,14 @@ def fetch_data(cnx, table_name):
     if table_name == "videos":
         cursor.execute(select_videos_query)
     elif table_name == "statistics":
-        cursor.execute(select_statistics_query)
+        if date_time == 'latest':
+            cursor.execute(select_latest_stats)
+        elif date_time == 'earliest':
+            cursor.execute(select_earliest_stats)
+        elif id:
+            cursor.execute(select_statistics_query+select_statistics_id, (id,))
+        else:
+            cursor.execute(select_statistics_query)
     else:
         raise Exception("Invalid table name")
     table_rows = cursor.fetchall()
