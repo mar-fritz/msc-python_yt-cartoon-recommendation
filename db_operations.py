@@ -4,7 +4,7 @@ import getpass
 import pandas as pd
 
 
-def db_tables():
+def tables():
     """
     Return a dictionary of table creation queries where the key
     is the name of the table and the value is the query
@@ -96,12 +96,12 @@ def db_connect(username, pwd, host="127.0.0.1", port="3306", db=None):
     return cnx
 
 
-def db_setup(cnx, dbname, tables):
+def db_setup(cnx, dbname, dbtables):
     """
     Sets up the database needed for the application
     :param cnx: mysql connector object
     :param dbname: name of database to be created
-    :param tables: dictionary of table creation queries
+    :param dbtables: dictionary of table creation queries
     :return: None
     """
     # create an instance of 'cursor' class
@@ -111,8 +111,8 @@ def db_setup(cnx, dbname, tables):
     # change to that database using the database property of the connection object
     cnx.database = dbname
     # create the tables
-    for table_name in tables:
-        table_description = tables[table_name]
+    for table_name in dbtables:
+        table_description = dbtables[table_name]
         try:
             print("Creating table {}: ".format(table_name), end='')
             cursor.execute(table_description)
@@ -154,14 +154,14 @@ def insert_data(cnx, query, data):
     cursor.close()
 
 
-def fetch_data(cnx, table_name, date_time='all', id=None):
+def fetch_data(cnx, table_name, date_time='all', v_id=None):
     """
     Performs a SELECT * query on the selected db table
     and returns a pandas DataFrame of the result
     :param cnx: mysql connector object
     :param table_name: name of db table data will be selected from
     :param date_time: date of statistics to return default='all' Other options: 'latest', 'earliest'
-    :param id: video id of statistics to return
+    :param v_id: video id of statistics to return
     :return: dataframe of table
     """
     # create an instance of 'cursor' class
@@ -175,8 +175,8 @@ def fetch_data(cnx, table_name, date_time='all', id=None):
             cursor.execute(select_latest_stats)
         elif date_time == 'earliest':
             cursor.execute(select_earliest_stats)
-        elif id:
-            cursor.execute(select_statistics_query+select_statistics_id, (id,))
+        elif v_id:
+            cursor.execute(select_statistics_query + select_statistics_id, (v_id,))
         else:
             cursor.execute(select_statistics_query)
     else:

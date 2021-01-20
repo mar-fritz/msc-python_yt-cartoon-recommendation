@@ -40,7 +40,7 @@ def db_initialization(api_key, file_path):
         # Connect to mysql server
         cnx = db_operations.db_connect(db_username, db_pass, "127.0.0.1", "3306")
         # Create db and tables
-        db_operations.db_setup(cnx, db_name, db_operations.db_tables())
+        db_operations.db_setup(cnx, db_name, db_operations.tables())
     except mysql.connector.Error as err:
         print(err)
         print("db setup failed")
