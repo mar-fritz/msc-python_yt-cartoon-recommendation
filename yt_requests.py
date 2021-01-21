@@ -10,7 +10,6 @@ from googleapiclient.discovery import build
 from pytube import YouTube
 import isodate
 from datetime import datetime
-import time
 
 
 def get_videos(api_key, sub_file_path):
@@ -57,7 +56,7 @@ def get_videos(api_key, sub_file_path):
     
     # loop for next page ( define count for number of pages)
     
-    while ('nextPageToken' in response) and (counter<10): # Each request can fetch up to 50 video information
+    while ('nextPageToken' in response) and (counter<1): # Each request can fetch up to 50 video information
         response=youtube.search().list(
             part="snippet",
             maxResults=50,
@@ -119,7 +118,7 @@ def get_videos(api_key, sub_file_path):
     filter_words='compilation|movie|playlist|movies|film'
     data0['v_title']=data0['v_title'].str.lower()
     data2=data0[~data0['v_title'].str.contains(filter_words)]
-    data2=data2[data2['v_title'].str.contains(user_input)]
+    data2=data2[data2['v_title'].str.contains(user_input)] ### remove "-" re.sub('[^A-Za-z0-9 ]+', '', text)
     data2=data2[data2['v_duration']<(4*data2['v_duration'].mean())]
     data2.drop_duplicates(subset=['v_id'],inplace=True)
     print(str(len(data2))+' videos remaining after filtering.')
@@ -190,7 +189,7 @@ if __name__ == '__main__':
     # API key
     api_k = 'AIzaSyBDijxihnqUFV-gvZf46z_3t_ZzwntUJjQ'
     # file path for downloading subtitles
-    file_path = 'C:\\Users\\30694\\OneDrive\\Υπολογιστής\\subs\\'
+    file_path = 'C:\\Users\\ProAdmin\\Desktop\\Big_Data\\python_sub_file'
     df1 = get_videos(api_k, file_path)
     print(df1)
     df2 = get_views_likes_dislikes(api_k, df1)
