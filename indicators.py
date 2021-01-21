@@ -37,6 +37,7 @@ def calc(earliest_stats, latest_stats):
     indicators_df['VPD'] = indicators_df['d_total_views'] / 2
     # ci
     # TODO: calculate CI indicator
+    indicators_df['ci'] = indicators_df['d_total_views'] % 2
     return indicators_df
 
 
@@ -47,7 +48,7 @@ def plot_views_likes_dislikes(statistics_df):
     :return: None
     """
     statistics_df.set_index('date_time', inplace=True)
-    print(statistics_df)
+    # print(statistics_df)
     statistics_df.plot(subplots=True, title=statistics_df['video_id'].iloc[0])
     plt.show()
 
