@@ -10,21 +10,22 @@ def tables():
     is the name of the table and the value is the query
     :return: dictionary of table creation queries
     """
-    tables = {}
+    db_tables = {}
 
     # videos table stores video content information
-    tables['videos'] = (
+    db_tables['videos'] = (
         "CREATE TABLE `videos` ("
         "  `id` varchar(11) NOT NULL,"
         "  `title` varchar(100) NOT NULL,"
         "  `url` varchar(45) NOT NULL,"
         "  `duration_sec` INT UNSIGNED NOT NULL,"
         "  `captions` varchar(100) NOT NULL,"
+        "  `captions_score` FLOAT DEFAULT NULL,"
         "  PRIMARY KEY (`id`)"
         ") ENGINE=InnoDB")
 
     # statistics table holds video statistics
-    tables['statistics'] = (
+    db_tables['statistics'] = (
         "CREATE TABLE `statistics` ("
         "  `video_id` varchar(11) NOT NULL,"
         "  `date_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,"
@@ -35,7 +36,7 @@ def tables():
         "  FOREIGN KEY (`video_id`) REFERENCES `videos` (`id`) ON DELETE CASCADE"
         ") ENGINE=InnoDB")
 
-    return tables
+    return db_tables
 
 
 # Queries for data insertion
@@ -46,6 +47,11 @@ insert_videos_query = ("INSERT INTO `videos` "
 insert_statistics_query = ("INSERT INTO `statistics` "
                            "(`video_id`, `date_time`, `view_count`, `like_count`, `dislike_count`) "
                            "VALUES (%s, %s, %s, %s, %s)")
+
+# Update subtitle score
+update_scores = ("UPDATE `videos` "
+                 "SET `captions_score`= %s "
+                 "WHERE `id` = %s")
 
 # Queries for data selection
 select_videos_query = "SELECT * FROM `videos`"
@@ -60,6 +66,9 @@ select_earliest_stats = ("SELECT * FROM `statistics`"
                          "WHERE `date_time` = (SELECT MIN(`date_time`) FROM `statistics`)")
 
 select_statistics_id = " WHERE `video_id` = %s"
+
+# delete
+delete_null_scores = "DELETE FROM `videos` WHERE `captions_score` IS NULL"
 
 
 def db_connect(username, pwd, host="127.0.0.1", port="3306", db=None):
@@ -129,11 +138,11 @@ def db_setup(cnx, dbname, dbtables):
 
 def insert_data(cnx, query, data):
     """
-    Inserts pandas DataFrame into the database row-by-row
+    Inserts/Updates database using a pandas DataFrame (row-by-row)
     Rows which produce errors are skipped
     :param cnx: mysql connector object
-    :param query: appropriate INSERT query
-    :param data: pandas dataframe to be inserted
+    :param query: appropriate INSERT/UPDATE query
+    :param data: pandas dataframe to be inserted (columns will be used as query args)
     :return: None
     """
     # create an instance of 'cursor' class
@@ -188,3 +197,12 @@ def fetch_data(cnx, table_name, date_time='all', v_id=None):
 
     cursor.close()
     return query_result
+
+
+def delete_where_captions_score_null(cnx):
+    # create an instance of 'cursor' class
+    cursor = cnx.cursor()
+    cursor.execute(delete_null_scores)
+    # Make sure data is committed to the database
+    cnx.commit()
+    cursor.close()
