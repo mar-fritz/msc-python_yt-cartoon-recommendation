@@ -4,6 +4,7 @@ import yt_requests
 import indicators
 import subtitle_score
 import time
+import numpy as np
 
 db_username = "root"
 db_pass = "x"
@@ -65,7 +66,7 @@ def db_initialization(api_key, file_path):
 
 def subtitle_filtering():
     # Connect to mysql server
-    cnx = db_operations.db_connect("root", "xmas2020", "127.0.0.1", "3306", 'test')
+    cnx = db_operations.db_connect(db_username, db_pass, db_host, db_port, db_name)
     subs_df = db_operations.fetch_data(cnx, 'videos')
     subs_scores = subtitle_score.subtitle_scoring(subs_df[['id', 'captions']])
     # TODO: fix below naming issue
@@ -83,17 +84,28 @@ def subtitle_filtering():
 
 def indicators_analysis():
     # Connect to mysql server
-    cnx = db_operations.db_connect(db_username, db_pass, db_host, "3306", db_name)
+    cnx = db_operations.db_connect(db_username, db_pass, db_host, db_port, db_name)
     # query data from statistics table
     latest_stats = db_operations.fetch_data(cnx, 'statistics', date_time='latest')
     earliest_stats = db_operations.fetch_data(cnx, 'statistics', date_time='earliest')
     # calculate indicators
     indicators_df = indicators.calc(earliest_stats, latest_stats)
-    # TODO: save indicators data to db
-    # # save as csv to analyze later
-    # indicators_df.to_csv("indicators.csv")
+    # save indicators data to db
+    print("Inserting Indicators in db")
+    # drop unnecessary columns
+    indicators_df.drop(columns=['d_total_views', 'd_likes', 'd_dislikes'], inplace=True)
+    # replace infinity values with NaN (inf creates errors to the DB)
+    # and reset video_id to be a column
+    indicators_df = indicators_df.replace([np.inf, -np.inf], np.nan).reset_index()
+    # insert indicators in db
+    # (change column order to match query)
+    db_operations.insert_data(cnx,
+                              db_operations.update_indicators,
+                              indicators_df[['p', 'r', 'LPV', 'DPV', 'VPD', 'ci', 'video_id']])
 
+    indicators_df.set_index('video_id', inplace=True)
     # Plot views, likes and dislikes of top 3 and bottom 3 videos according to ci indicator
+    print("Plot views, likes and dislikes")
     # get ids of videos with the top 3 and bottom 3 ci values
     ci = indicators_df['ci'].sort_values()
     top3, bottom3 = ci.iloc[:3].index.tolist(), ci.iloc[-3:].index.tolist()
@@ -101,9 +113,9 @@ def indicators_analysis():
         video_stats = db_operations.fetch_data(cnx, 'statistics', v_id=video_id)
         indicators.plot_views_likes_dislikes(video_stats)
 
-    # Calculate and plot correlation matrix of indicators and video duration
-    video_durations = db_operations.fetch_data(cnx, 'videos').drop(columns=['title', 'url', 'captions'])
-    indicators.correlation(indicators_df, video_durations)
+    # Calculate and plot correlation matrix of indicators, video duration and subtitle score
+    video_info = db_operations.fetch_data(cnx, 'videos').drop(columns=['title', 'url', 'captions'])
+    indicators.correlation(video_info.set_index('id'))
 
     # close the connection
     cnx.close()

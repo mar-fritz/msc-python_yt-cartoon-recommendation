@@ -21,6 +21,12 @@ def tables():
         "  `duration_sec` INT UNSIGNED NOT NULL,"
         "  `captions` varchar(100) NOT NULL,"
         "  `captions_score` FLOAT DEFAULT NULL,"
+        "  `p` FLOAT DEFAULT NULL,"
+        "  `r` FLOAT DEFAULT NULL,"
+        "  `LPV` FLOAT DEFAULT NULL,"
+        "  `DPV` FLOAT DEFAULT NULL,"
+        "  `VPD` FLOAT DEFAULT NULL,"
+        "  `ci` FLOAT DEFAULT NULL,"
         "  PRIMARY KEY (`id`)"
         ") ENGINE=InnoDB")
 
@@ -52,6 +58,16 @@ insert_statistics_query = ("INSERT INTO `statistics` "
 update_scores = ("UPDATE `videos` "
                  "SET `captions_score`= %s "
                  "WHERE `id` = %s")
+
+# Update indicator values
+update_indicators = ("UPDATE `videos` "
+                     "SET `p`= %s, "
+                     "`r`= %s, "
+                     "`LPV`= %s, "
+                     "`DPV`= %s, "
+                     "`VPD`= %s, "
+                     "`ci`= %s "
+                     "WHERE `id` = %s")
 
 # Queries for data selection
 select_videos_query = "SELECT * FROM `videos`"
@@ -147,6 +163,9 @@ def insert_data(cnx, query, data):
     """
     # create an instance of 'cursor' class
     cursor = cnx.cursor()
+
+    # Replace NaN with None
+    data = data.where(pd.notnull(data), None)
 
     # Insert DataFrame records one by one.
     for i, row in data.iterrows():
