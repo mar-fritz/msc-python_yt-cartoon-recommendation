@@ -2,6 +2,7 @@ import mysql.connector
 import db_operations
 import yt_requests
 import indicators
+import subtitle_score
 import time
 
 db_username = "root"
@@ -62,6 +63,24 @@ def db_initialization(api_key, file_path):
         print("Get statistics COMPLETE")
 
 
+def subtitle_filtering():
+    # Connect to mysql server
+    cnx = db_operations.db_connect("root", "xmas2020", "127.0.0.1", "3306", 'test')
+    subs_df = db_operations.fetch_data(cnx, 'videos')
+    subs_scores = subtitle_score.subtitle_scoring(subs_df[['id', 'captions']])
+    # TODO: fix below naming issue
+    subs_scores = subs_scores.rename(columns={"sub_score": "captions_score"})
+    # insert scores in db
+    print("Inserting Scores in db")
+    # (reorder columns because of update statement)
+    db_operations.insert_data(cnx, db_operations.update_scores, subs_scores[['captions_score', 'id']])
+    # drop columns where captions_score = NULL
+    print("Filtering videos from db")
+    db_operations.delete_where_captions_score_null(cnx)
+    # close the connection
+    cnx.close()
+
+
 def indicators_analysis():
     # Connect to mysql server
     cnx = db_operations.db_connect(db_username, db_pass, db_host, "3306", db_name)
@@ -94,5 +113,8 @@ if __name__ == '__main__':
     # print("test stuff here")
     # STEP 1
     db_initialization('your-api-key-here', "your/path/here")
+    # STEP 2
+    subtitle_filtering()
     # STEP 3
     indicators_analysis()
+
