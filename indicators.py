@@ -53,18 +53,18 @@ def plot_views_likes_dislikes(statistics_df):
     plt.show()
 
 
-def correlation(indicators, durations):
+def correlation(indicators, durations_scores):
     """
     Calculates and plots correlation matrix of video indicators and durations
     :param indicators: DataFrame containing the indicators values of videos
-    :param durations: DataFrame containing the video durations
+    :param durations_scores: DataFrame containing the video durations & subtitle scores
     :return: None
     """
 
     # drop unnecessary columns
     indicators.drop(columns=['d_total_views', 'd_likes', 'd_dislikes'], inplace=True)
-    # add durations column to indicators dataframe
-    indicators['duration_sec'] = durations.set_index('id')
+    # add durations and subtitle scores to indicators dataframe
+    indicators = pd.concat([indicators, durations_scores.set_index('id')], axis=1)
     # replace infinity values with NaN (inf creates errors to the scaler)
     indicators = indicators.replace([np.inf, -np.inf], np.nan)
 
