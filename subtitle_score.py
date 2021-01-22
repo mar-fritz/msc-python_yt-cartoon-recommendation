@@ -7,7 +7,7 @@ Created on Thu Jan 14 19:02:34 2021
 
 import pandas as pd
 import re
-from yt_requests import get_videos
+# from yt_requests import get_videos
 
 
 def convert_duration(timein):
@@ -33,7 +33,7 @@ def get_sub_score(path):
     
     df['sub_dur']=df['sub_dur'].apply(convert_duration)
     
-    df['sub_score']=df.apply(lambda row: sub_score(row),axis=1)
+    df['captions_score']=df.apply(lambda row: sub_score(row),axis=1)
     final_score=(df.sub_score.sum())/(df.sub_dur.sum())
     open(path,'w').close()
     df.sub_text.to_csv(path,index=False,header=False,encoding='utf-8')
@@ -41,10 +41,10 @@ def get_sub_score(path):
 
 def subtitle_scoring(df1):
      print('subtitle_score Started')
-     df1['sub_score']=df1.apply(lambda row: get_sub_score(row['captions']),axis=1)
+     df1['captions_score']=df1.apply(lambda row: get_sub_score(row['captions']),axis=1)
      print('Subtitle rating completed')
      len1=len(df1)
-     df1.drop(df1[(df1.sub_score<df1.sub_score.quantile(.2))].index,inplace=True)
+     df1.drop(df1[(df1.captions_score<df1.captions_score.quantile(.2))].index,inplace=True)
      len2=str(len(df1)-len1)
      print('Dropped '+len2+' subtitles ( below 20% percentile)')
      df1.reset_index(drop=True,inplace=True)
