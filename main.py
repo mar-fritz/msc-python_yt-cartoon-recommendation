@@ -99,10 +99,11 @@ def indicators_analysis():
     # Connect to mysql server
     cnx = db_operations.db_connect(db_username, db_pass, db_host, db_port, db_name)
     # query data from statistics table
+    video_info = db_operations.fetch_data(cnx, 'videos')
     latest_stats = db_operations.fetch_data(cnx, 'statistics', date_time='latest')
     earliest_stats = db_operations.fetch_data(cnx, 'statistics', date_time='earliest')
     # calculate indicators
-    indicators_df = indicators.calc(earliest_stats, latest_stats)
+    indicators_df = indicators.calc(earliest_stats, latest_stats, video_info[['id', 'captions']])
     # save indicators data to db
     print("Inserting Indicators in db")
     # drop unnecessary columns
@@ -127,7 +128,7 @@ def indicators_analysis():
         indicators.plot_views_likes_dislikes(video_stats)
 
     # Calculate and plot correlation matrix of indicators, video duration and subtitle score
-    video_info = db_operations.fetch_data(cnx, 'videos').drop(columns=['title', 'url', 'captions'])
+    video_info = video_info.drop(columns=['title', 'url', 'captions'])
     indicators.correlation(video_info.set_index('id'))
 
     # close the connection

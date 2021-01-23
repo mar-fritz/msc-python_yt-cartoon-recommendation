@@ -4,14 +4,17 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import seaborn as sns
+import sentiment_analysis
 # https://matplotlib.org/3.3.3/api/_as_gen/matplotlib.axes.Axes.ticklabel_format.html
 # https://matplotlib.org/3.1.1/api/matplotlib_configuration_api.html#matplotlib.RcParams
 matplotlib.rcParams['axes.formatter.useoffset'] = False
 
 
-def calc(earliest_stats, latest_stats):
+
+def calc(earliest_stats, latest_stats, captions):
     """
     Creates pandas DataFrame with indicator values for all videos
+    :param captions: DataFrame of captions
     :param earliest_stats: DataFrame of first stats of videos collected
     :param latest_stats: DataFrame of last stats of videos collected
     :return: DataFrame with indicator values
@@ -36,8 +39,11 @@ def calc(earliest_stats, latest_stats):
     # VPD = delta(views)/2  (daily views for the 2 days of data)
     indicators_df['VPD'] = indicators_df['d_total_views'] / 2
     # ci
-    # TODO: calculate CI indicator
-    indicators_df['ci'] = indicators_df['d_total_views'] % 2
+    # calculate CI indicator
+    sentiment = sentiment_analysis.analyze(captions)
+    sentiment.set_index('id', inplace=True)
+    indicators_df['ci'] = (sentiment['bayes_res'] + sentiment['pattern_res'])/2
+
     return indicators_df
 
 
