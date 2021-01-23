@@ -84,8 +84,6 @@ def subtitle_filtering():
     cnx = db_operations.db_connect(db_username, db_pass, db_host, db_port, db_name)
     subs_df = db_operations.fetch_data(cnx, 'videos')
     subs_scores = subtitle_score.subtitle_scoring(subs_df[['id', 'captions']])
-    # TODO: fix below naming issue
-    subs_scores = subs_scores.rename(columns={"sub_score": "captions_score"})
     # insert scores in db
     print("Inserting Scores in db")
     # (reorder columns because of update statement)
