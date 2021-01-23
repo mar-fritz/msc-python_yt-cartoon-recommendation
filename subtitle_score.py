@@ -33,40 +33,35 @@ def get_sub_score(path):
     
     df['sub_dur']=df['sub_dur'].apply(convert_duration)
     
-    df['sub_score']=df.apply(lambda row: sub_score(row),axis=1)
-    final_score=(df.sub_score.sum())/(df.sub_dur.sum())
+    df['captions_score']=df.apply(lambda row: sub_score(row),axis=1)
+    final_score=(df.captions_score.sum())/(df.sub_dur.sum())
     open(path,'w').close()
     df.sub_text.to_csv(path,index=False,header=False,encoding='utf-8')
     return final_score
 
 def subtitle_scoring(df1):
      print('subtitle_score Started')
-     df1['sub_score']=df1.apply(lambda row: get_sub_score(row['captions']),axis=1)
+     df1['captions_score']=df1.apply(lambda row: get_sub_score(row['captions']),axis=1)
      print('Subtitle rating completed')
      len1=len(df1)
-     df1.drop(df1[(df1.sub_score<df1.sub_score.quantile(.2))].index,inplace=True)
-     len2=str(len(df1)-len1)
+     df1.drop(df1[(df1.captions_score<df1.captions_score.quantile(.2))].index,inplace=True)
+     len2=str(len1-len(df1))
      print('Dropped '+len2+' subtitles ( below 20% percentile)')
      df1.reset_index(drop=True,inplace=True)
      ###TODO delete droped sub files
      return df1
     
-#%%
-# if __name__ == '__main__':
-#     dfout=subtitle_scoring(dfin)
-
-
-
 
 #%%
 
 # FOR TESTING PURPOSES
 
 # api_k = 'AIzaSyBDijxihnqUFV-gvZf46z_3t_ZzwntUJjQ'
-# file_path = 'C:\\Users\\ProAdmin\\Desktop\\Big_Data\\python_sub_file\\'
+# # file_path = 'C:\\Users\\ProAdmin\\Desktop\\Big_Data\\python_sub_file\\'
+# file_path='C:\\Users\\30694\\Google Drive\Big Data & Analytics\Python\sub_file\\'
 # df1=get_videos(api_k,file_path)
 
 
-
+# df2=subtitle_scoring(df1)
 
 
