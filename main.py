@@ -17,7 +17,10 @@ def get_statistics(df_in, api_key, time_interval=3600, iterations=48):
     counter = 0
     while counter < iterations:
         print(counter, ' Getting statistics...')
+        start = time.time()
         statistics_df = yt_requests.get_views_likes_dislikes(api_key=api_key, df_in1=df_in)
+        end = time.time()
+        print("TIME: yt_requests.get_views_likes_dislikes in ", end - start, " seconds.")
         try:
             # Connect to mysql server
             cnx = db_operations.db_connect(db_username, db_pass, db_host, db_port, db_name)
@@ -27,7 +30,10 @@ def get_statistics(df_in, api_key, time_interval=3600, iterations=48):
         else:
             # insert statistics DataFrame into db
             print("Inserting data in DB...")
+            start = time.time()
             db_operations.insert_data(cnx, db_operations.insert_statistics_query, statistics_df)
+            end = time.time()
+            print("TIME: Inserted statistics in DB in ", end - start, " seconds.")
             # close the connection
             cnx.close()
             print(counter, 'Complete')
@@ -40,7 +46,10 @@ def get_statistics(df_in, api_key, time_interval=3600, iterations=48):
 def db_initialization(api_key, file_path):
     print("initializing")
     # get videos data
+    start = time.time()
     video_dataframe = yt_requests.get_videos(api_key, file_path)
+    end = time.time()
+    print("TIME: yt_requests.get_videos in ", end - start, " seconds.")
     try:
         # Connect to mysql server
         cnx = db_operations.db_connect(db_username, db_pass, db_host, db_port)
@@ -52,9 +61,15 @@ def db_initialization(api_key, file_path):
     else:
         print("db setup finished")
         # insert videos data
+        start = time.time()
         db_operations.insert_data(cnx, db_operations.insert_videos_query, video_dataframe)
+        end = time.time()
+        print("TIME: Finished inserting videos in DB in ", end - start, " seconds.")
         # query data from videos table
+        start = time.time()
         video_dataframe = db_operations.fetch_data(cnx, 'videos')
+        end = time.time()
+        print("TIME: Finished querying videos from DB in ", end - start, " seconds.")
         # close the connection
         cnx.close()
         print("Get statistics START")
