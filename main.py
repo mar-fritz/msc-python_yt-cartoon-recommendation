@@ -91,7 +91,7 @@ def db_initialization(api_key, file_path):
         # close the connection
         cnx.close()
         print("Get statistics START")
-        dt = 36   # int(input('Specify sample frequency in seconds: '))
+        dt = 3600   # int(input('Specify sample frequency in seconds: '))
         it = 48     # int(input('Specify number of samples: '))
         get_statistics(video_dataframe[['id']], api_key, time_interval=dt, iterations=it)
         print("Get statistics COMPLETE")
