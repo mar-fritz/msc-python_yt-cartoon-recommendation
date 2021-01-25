@@ -6,6 +6,7 @@ import subtitle_score
 import time
 import numpy as np
 
+# Database options
 db_username = "root"
 db_pass = "x"
 db_name = "test"
@@ -13,12 +14,21 @@ db_host = "127.0.0.1"
 db_port = "3306"
 
 
-def get_statistics(df_in, api_key, time_interval=3600, iterations=48):
+def get_statistics(videos_df, api_key, time_interval=3600, iterations=48):
+    """
+    Collects samples of the statistics of the videos between set time intervals.
+    The collected statistics are inserted into the db on every iteration.
+    :param videos_df: dataframe with video ids
+    :param api_key: the API key to use when making requests to YouTube
+    :param time_interval: time between samples (in seconds)
+    :param iterations: number of samples to collect
+    :return: None
+    """
     counter = 0
     while counter < iterations:
         print(counter, ' Getting statistics...')
         start = time.time()
-        statistics_df = yt_requests.get_views_likes_dislikes(api_key=api_key, df_in1=df_in)
+        statistics_df = yt_requests.get_views_likes_dislikes(api_key=api_key, df_in1=videos_df)
         end = time.time()
         print("TIME: yt_requests.get_views_likes_dislikes in ", end - start, " seconds.")
         try:
@@ -44,6 +54,13 @@ def get_statistics(df_in, api_key, time_interval=3600, iterations=48):
 
 
 def db_initialization(api_key, file_path):
+    """
+    Initializes the program: Collects video information and statistics, sets up the db,
+    inserts video and statistics into the db
+    :param api_key: the API key to use when making requests to YouTube
+    :param file_path: The system directory where downloaded subtitle files will be saved
+    :return: None
+    """
     print("initializing")
     # get videos data
     start = time.time()
@@ -73,20 +90,23 @@ def db_initialization(api_key, file_path):
         # close the connection
         cnx.close()
         print("Get statistics START")
-        dt = int(input('Specify sample frequency in seconds: '))
-        it = int(input('Specify number of samples: '))
-        get_statistics(video_dataframe, api_key, time_interval=dt, iterations=it)
+        dt = 36   # int(input('Specify sample frequency in seconds: '))
+        it = 48     # int(input('Specify number of samples: '))
+        get_statistics(video_dataframe[['id']], api_key, time_interval=dt, iterations=it)
         print("Get statistics COMPLETE")
 
 
 def subtitle_filtering():
+    """
+    Calculates and adds a score to the video's captions, deletes videos with low scores from the db
+    :return: None
+    """
     # Connect to mysql server
     cnx = db_operations.db_connect(db_username, db_pass, db_host, db_port, db_name)
     subs_df = db_operations.fetch_data(cnx, 'videos')
     subs_scores = subtitle_score.subtitle_scoring(subs_df[['id', 'captions']])
-    # insert scores in db
+    # insert scores in db (reorder columns because of update statement)
     print("Inserting Scores in db")
-    # (reorder columns because of update statement)
     db_operations.insert_data(cnx, db_operations.update_scores, subs_scores[['captions_score', 'id']])
     # drop columns where captions_score = NULL
     print("Filtering videos from db")
@@ -96,6 +116,12 @@ def subtitle_filtering():
 
 
 def indicators_analysis():
+    """
+    Calculates and saves in the db indicators for the videos in the db
+    Plots views, likes and dislikes of top 3 and bottom 3 videos according to ci indicator
+    Calculates and plots correlation matrix of indicators, video duration and subtitle score
+    :return: None
+    """
     # Connect to mysql server
     cnx = db_operations.db_connect(db_username, db_pass, db_host, db_port, db_name)
     # query data from statistics table
@@ -111,8 +137,7 @@ def indicators_analysis():
     # replace infinity values with NaN (inf creates errors to the DB)
     # and reset video_id to be a column
     indicators_df = indicators_df.replace([np.inf, -np.inf], np.nan).reset_index()
-    # insert indicators in db
-    # (change column order to match query)
+    # insert indicators in db (change column order to match query)
     db_operations.insert_data(cnx,
                               db_operations.update_indicators,
                               indicators_df[['p', 'r', 'LPV', 'DPV', 'VPD', 'ci', 'video_id']])
