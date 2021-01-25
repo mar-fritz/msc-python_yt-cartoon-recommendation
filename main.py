@@ -5,6 +5,7 @@ import indicators
 import subtitle_score
 import time
 import numpy as np
+import argparse
 
 # Database options
 db_username = "root"
@@ -161,9 +162,15 @@ def indicators_analysis():
 
 
 if __name__ == '__main__':
-    # print("test stuff here")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('api_key',
+                        help="the API key to use when making requests to YouTube")
+    parser.add_argument('subs_dir',
+                        help="the system directory where downloaded subtitle files will be saved")
+    args = parser.parse_args()
+    print("API key=", args.api_key, " Subtitle Directory=", args.subs_dir)
     # STEP 1
-    db_initialization('your-api-key-here', "your/path/here")
+    db_initialization(args.api_key, args.subs_dir)
     # STEP 2
     subtitle_filtering()
     # STEP 3
