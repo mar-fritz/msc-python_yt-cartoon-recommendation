@@ -6,6 +6,8 @@ import subtitle_score
 import time
 import numpy as np
 import argparse
+from sklearn.preprocessing import StandardScaler
+import pandas as pd
 
 # Database options
 db_username = "root"
@@ -91,7 +93,7 @@ def db_initialization(api_key, file_path):
         # close the connection
         cnx.close()
         print("Get statistics START")
-        dt = 36   # int(input('Specify sample frequency in seconds: '))
+        dt = 3600   # int(input('Specify sample frequency in seconds: '))
         it = 48     # int(input('Specify number of samples: '))
         get_statistics(video_dataframe[['id']], api_key, time_interval=dt, iterations=it)
         print("Get statistics COMPLETE")
@@ -156,6 +158,16 @@ def indicators_analysis():
     # Calculate and plot correlation matrix of indicators, video duration and subtitle score
     video_info = video_info.drop(columns=['title', 'url', 'captions'])
     indicators.correlation(video_info.set_index('id'))
+
+    # normalize views
+    # create a scaler object
+    std_scaler = StandardScaler()
+    views = latest_stats.set_index('video_id')
+    video_info.set_index('id', inplace=True)
+    video_info['std_views'] = pd.DataFrame(std_scaler.fit_transform(views['view_count'].to_numpy().reshape(-1, 1)),
+                                           columns=['view_count'], index=views.index)
+    # video information shown in order of standardized views
+    video_info.sort_values('std_views', ascending=False).to_csv("results.csv")
 
     # close the connection
     cnx.close()
