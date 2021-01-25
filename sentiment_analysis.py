@@ -59,7 +59,7 @@ def analyzers(text_in):
 
 def analyze(df4):
     nltk.download('stopwords')
-    
+    print("Performing Preprocessing and calling Analyzers")
     df4['analysis_res']=df4.captions.apply(lambda captions:processing(captions)) 
     df4['bayes_res']=df4.analysis_res.apply(lambda x :x[0])
     df4['pattern_res']=df4.analysis_res.apply(lambda x :x[1])
