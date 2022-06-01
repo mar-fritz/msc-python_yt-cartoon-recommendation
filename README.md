@@ -3,6 +3,8 @@ _Assignment for the Python course in MSc Big Data and Analytics 2020-2021_
 
 The aim of this project is to utilize the tools of programming, databases and Natural Language Processing (NLP) to discover any underlying connections between Youtube’s view-based ordering algorithm and the emotional content of cartoon videos. Proof of a strong relation between the two could potentially result in the improvement of the company’s cost policies, regarding the projected advertisements on Youtube.
 
+Find the containerized application here: [msc-python_yt-cartoon-rec](https://hub.docker.com/r/marfritz/msc-python_yt-cartoon-rec)
+
 ### Database Operations (db_operations.py)
 The database operations module is responsible for providing the operations to the MySQL database connected to the system. 
 Communication with the database is achieved using the MySQL Connector Python driver. 
